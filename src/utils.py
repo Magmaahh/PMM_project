@@ -15,7 +15,7 @@ def save_traces(traces, activities, file_path):
             writer.writerow(row)
 
 # Encodes traces into binary vectors based on activity presence within a given prefix length
-def encode_traces(traces, activities, prefix_length):
+def encode_traces(traces, activities, prefix_length = None):
     activity_index = {activity: idx for idx, activity in enumerate(activities)}
     num_activities = len(activities)
 
@@ -23,7 +23,7 @@ def encode_traces(traces, activities, prefix_length):
         encoding = [0] * num_activities
 
         for i, activity in enumerate(trace["activities"]):
-            if i >= prefix_length:
+            if prefix_length is not None and i >= prefix_length:
                 break
             if activity in activity_index:
                 encoding[activity_index[activity]] = 1
@@ -72,10 +72,16 @@ def prepare_data(raw_training_data, raw_test_data, prefix_length):
     testing_traces = encode_traces(traces, activities, prefix_length)
 
     # Save processed data to CSV files
-    data_path = f"data/processed/{prefix_length}_prefix/"
+    data_path = "data/processed"
+    prefix_data_path = os.path.join(data_path, f"{prefix_length}_prefix")
     os.makedirs(data_path, exist_ok=True)
+    os.makedirs(prefix_data_path, exist_ok=True)
 
-    save_traces(training_traces, activities, os.path.join(data_path, "training_data.csv"))
-    save_traces(testing_traces, activities, os.path.join(data_path, "testing_data.csv"))
+    save_traces(training_traces, activities, os.path.join(prefix_data_path, "training_data.csv"))
+    save_traces(testing_traces, activities, os.path.join(prefix_data_path, "testing_data.csv"))
 
-    return training_traces, testing_traces, activities
+    # Save full testing data without prefix limitation
+    full_traces = encode_traces(traces, activities, prefix_length=None)
+    save_traces(full_traces, activities, os.path.join(data_path, "full_testing_data.csv"))
+
+    return training_traces, testing_traces, full_traces, activities
