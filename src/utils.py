@@ -78,4 +78,4 @@ def prepare_data(raw_training_data, raw_test_data, prefix_length):
     save_traces(training_traces, activities, os.path.join(data_path, "training_data.csv"))
     save_traces(testing_traces, activities, os.path.join(data_path, "testing_data.csv"))
 
-    return training_traces, testing_traces
+    return training_traces, testing_traces, activities

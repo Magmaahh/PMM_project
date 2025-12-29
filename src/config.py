@@ -7,7 +7,7 @@ PREFIX_LENGTH = 5
 
 # Default parameters for the decision tree classifier
 params = {
-    "max_depth": 5,
-    "min_samples_leaf": 10,
-    "random_state": 42
+    "max_depth": 3,
+    "min_samples_split": 5,
+    "min_samples_leaf": 2
 }
