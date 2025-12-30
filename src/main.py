@@ -3,24 +3,33 @@ from utils import prepare_data
 from functions import *
 
 if __name__ == "__main__":
-    # Prepare train and test data
-    prefix_training_log, prefix_testing_log, test_set, activities = prepare_data(TRAIN_DATA_PATH, TEST_DATA_PATH, PREFIX_LENGTH)
+    results = {}
 
-    X_train = [trace["encoding"] for trace in prefix_training_log]
-    y_train = [trace["label"] for trace in prefix_training_log]
+    for PREFIX_LENGTH in PREFIX_LENGTH:
+        print(f"\n\n=== Processing with Prefix Length: {PREFIX_LENGTH} ===\n")
 
-    X_test = [trace["encoding"] for trace in prefix_testing_log]
-    y_test = [trace["label"] for trace in prefix_testing_log]
+        # Prepare train and test data
+        prefix_training_log, prefix_testing_log, test_set, activities = prepare_data(TRAIN_DATA_PATH, TEST_DATA_PATH, PREFIX_LENGTH)
 
-    # Optimize and train the model
-    model = optimize_and_train_model(X_train, y_train, params)
+        X_train = [trace["encoding"] for trace in prefix_training_log]
+        y_train = [trace["label"] for trace in prefix_training_log]
 
-    # Test the model
-    test_model(model, X_test, y_test)
+        X_test = [trace["encoding"] for trace in prefix_testing_log]
+        y_test = [trace["label"] for trace in prefix_testing_log]
 
-    # Convert the trained tree to code
-    tree_to_code(model, activities)
+        # Optimize and train the model
+        model = optimize_and_train_model(X_train, y_train, params)
 
-    # Extract and evaluate recommendations
-    recommendations = extract_recommendations(tree=model, feature_names=activities, class_values=model.classes_, prefix_set=prefix_testing_log)
-    evaluate_recommendations(test_set, recommendations)
+        # Test the model
+        test_model(model, X_test, y_test)
+
+        # Convert the trained tree to code
+        tree_to_code(model, activities)
+
+        # Extract and evaluate recommendations
+        recommendations = extract_recommendations(tree=model, feature_names=activities, class_values=model.classes_, prefix_set=prefix_testing_log)
+        results[PREFIX_LENGTH] = evaluate_recommendations(test_set, recommendations)
+
+    print(f"\n=== Summary of Results ===")
+    for prefix_len, metrics in results.items():
+        print(f"Prefix Length {prefix_len}: Accuracy={metrics['accuracy']:.4f}, Precision={metrics['precision']:.4f}, Recall={metrics['recall']:.4f}, F1-Score={metrics['f1_score']:.4f}")

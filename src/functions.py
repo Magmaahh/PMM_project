@@ -5,6 +5,7 @@ import random
 
 # Optimizes and trains the Decision Tree model using Grid Search
 def optimize_and_train_model(X_train, y_train, params):
+    print(f"\n--- Hyperparameter Optimization via Grid Search ---\n")
     model = DecisionTreeClassifier(random_state=42)
     grid_search = GridSearchCV(
         model, 
@@ -15,6 +16,7 @@ def optimize_and_train_model(X_train, y_train, params):
     )
     grid_search.fit(X_train, y_train)
     print(f"Best Hyperparameters: {grid_search.best_params_}")
+
     return grid_search.best_estimator_
 
 # Tests the trained model and outputs accuracy and F-measure
@@ -59,7 +61,6 @@ def extract_positive_paths(tree, feature_names):
     classes = list(tree.classes_)
     if "true" not in classes:
         raise ValueError("Positive class 'true' not found in model classes")
-
     pos_idx = classes.index("true")
 
     def recurse(node, path):
@@ -81,6 +82,11 @@ def extract_positive_paths(tree, feature_names):
         recurse(tree_.children_right[node], path + [(activity, 1)])
 
     recurse(0, [])
+
+    print(f"\nExtracted {len(paths)} positive paths from the decision tree")
+    for i, p in enumerate(paths):
+        conds = ", ".join([f"{act}={'done' if pres==1 else 'NOT done'}" for act, pres in p["conditions"]])
+        print(f"\nPath {i+1}: If [{conds}] => Confidence: {p['confidence']:.4f}")
 
     return paths
 
@@ -138,7 +144,7 @@ def extract_recommendations(tree, feature_names, class_values, prefix_set):
         rec = set()
         for activity, presence in best_path["conditions"]:
             if encoding[activity_index[activity]] != presence:
-                verdict = "execute" if presence == 1 else "skip"
+                verdict = "has to be executed" if presence == 1 else "does not have to be executed"
                 rec.add((activity, verdict))
 
         recommendations.append({
@@ -164,8 +170,8 @@ def evaluate_recommendations(test_set, recommendations):
         rec_set = rec["recommendation"]
 
         print(f"\nTrace ID: {rec['trace']}")
+        print(f"Label (true = fast/false = slow): {ground_truth_pos}")
         print(f"Actual Activities: {actual_activities}")
-        print(f"Ground Truth Positive: {ground_truth_pos}")
         print(f"Recommendation Set: {rec_set}")
 
         if not rec_set:
@@ -173,9 +179,9 @@ def evaluate_recommendations(test_set, recommendations):
         else:
             followed = True
             for activity, verdict in rec_set:
-                if verdict == "execute" and activity not in actual_activities:
+                if verdict == "has to be executed" and activity not in actual_activities:
                     followed = False; break
-                if verdict == "skip" and activity in actual_activities:
+                if verdict == "does not have to be executed" and activity in actual_activities:
                     followed = False; break
 
         if followed and ground_truth_pos: TP += 1
@@ -188,7 +194,15 @@ def evaluate_recommendations(test_set, recommendations):
     rec_val = TP / (TP + FN) if (TP + FN) > 0 else 0
     f_score = (2 * prec * rec_val / (prec + rec_val)) if (prec + rec_val) > 0 else 0
 
+    print("\nResults:")
     print(f"Classification: TP={TP}, FP={FP}, TN={TN}, FN={FN}")
     print(f"Precision_recc: {prec:.4f}")
     print(f"Recall_recc:    {rec_val:.4f}")
     print(f"F-measure_recc: {f_score:.4f}")
+
+    return {
+        "accuracy": (TP + TN) / (TP + TN + FP + FN) if (TP + TN + FP + FN) > 0 else 0,
+        "precision": prec,
+        "recall": rec_val,
+        "f1_score": f_score
+    }

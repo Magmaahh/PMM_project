@@ -30,6 +30,8 @@ def encode_traces(traces, activities, prefix_length = None):
 
         trace["encoding"] = encoding
 
+    print(f"Encoded {len(traces)} traces with prefix length {prefix_length if prefix_length is not None else 'full length'}\n")
+
     return traces
 
 # Loads raw traces from an XES file;
@@ -58,16 +60,21 @@ def load_raw_traces(xes_path):
                 "activities": activities
             })
 
+    print(f"Loaded {len(traces)} traces from {xes_path}")
+    print(f"Identified {len(activity_set)} unique activities")
+
     return traces, sorted(activity_set)
 
 # Prepares training and testing data from raw XES files;
 # saves the processed data to CSV files and returns the processed traces
 def prepare_data(raw_training_data, raw_test_data, prefix_length):
     # Load and process training data
+    print(f"Preparing training data")
     raw_train_traces, activities = load_raw_traces(raw_training_data)
     train_traces = encode_traces(raw_train_traces, activities, prefix_length)  
 
     # Load and process testing data
+    print(f"\nPreparing testing data")
     raw_test_traces, _ = load_raw_traces(raw_test_data)
     test_traces = encode_traces(raw_test_traces, activities, prefix_length)
 
@@ -81,6 +88,7 @@ def prepare_data(raw_training_data, raw_test_data, prefix_length):
     save_traces(test_traces, activities, os.path.join(prefix_data_path, "testing_data.csv"))
 
     # Save full testing data without prefix limitation
+    print(f"\nPreparing full testing data without prefix limitation")
     full_test_traces = encode_traces(raw_test_traces, activities, prefix_length=None)
     save_traces(full_test_traces, activities, os.path.join(data_path, "full_testing_data.csv"))
 
