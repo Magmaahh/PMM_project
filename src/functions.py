@@ -23,7 +23,7 @@ def test_model(model, X_test, y_test):
     accuracy = accuracy_score(y_test, y_pred)
     f_measure = f1_score(y_test, y_pred, average='binary', pos_label='true')
 
-    print(f"\n--- Model Prediction Performance ---")
+    print(f"\n--- Model Prediction Performance ---\n")
     print(f"Accuracy: {accuracy:.4f}")
     print(f"F-measure (Outcome): {f_measure:.4f}")
 
@@ -35,7 +35,7 @@ def tree_to_code(tree, feature_names):
         for i in tree_.feature
     ]
 
-    print("--- Decision Tree Structure ---")
+    print("\n--- Decision Tree Structure ---\n")
     def recurse(node, depth):
         indent = "  " * depth
         if tree_.feature[node] != _tree.TREE_UNDEFINED:
@@ -51,33 +51,31 @@ def tree_to_code(tree, feature_names):
     recurse(0, 1)
 
 # Extracts positive paths from the decision tree
-def extract_positive_paths(tree, feature_names, class_values):
+def extract_positive_paths(tree, feature_names):
     tree_ = tree.tree_
     paths = []
 
-    # Identify index of the positive class
-    class_list = list(class_values)
-    if "true" not in class_list:
-        print("Warning: 'true' label not found in model classes!")
-        return []
-    pos_idx = class_list.index("true")
+    # Identify index of positive class
+    classes = list(tree.classes_)
+    if "true" not in classes:
+        raise ValueError("Positive class 'true' not found in model classes")
 
-    # Recursive function to traverse the tree
+    pos_idx = classes.index("true")
+
     def recurse(node, path):
-        # Leaf node
         if tree_.feature[node] == _tree.TREE_UNDEFINED:
             values = tree_.value[node][0]
             total = values.sum()
             confidence = values[pos_idx] / total if total > 0 else 0
 
-            if confidence > 0.5:
+            # Keep all leaves predicting positive class
+            if values[pos_idx] == max(values):
                 paths.append({
                     "conditions": path.copy(),
                     "confidence": confidence
                 })
             return
-        
-        # Internal node
+
         activity = feature_names[tree_.feature[node]]
         recurse(tree_.children_left[node],  path + [(activity, 0)])
         recurse(tree_.children_right[node], path + [(activity, 1)])
@@ -89,45 +87,64 @@ def extract_positive_paths(tree, feature_names, class_values):
 # Extracts recommendations for each trace in the prefix set
 def extract_recommendations(tree, feature_names, class_values, prefix_set):
     activity_index = {a: i for i, a in enumerate(feature_names)}
-    positive_paths = extract_positive_paths(tree, feature_names, class_values)
-    
+    positive_paths = extract_positive_paths(tree, feature_names)
+
+    # Identify positive class label
+    pos_label = class_values[list(class_values).index("true")]
+
     recommendations = []
+
     for trace in prefix_set:
         encoding = trace["encoding"]
         predicted_label = tree.predict([encoding])[0]
 
-        # Requirement: skip if predicted positive
-        if str(predicted_label).lower() == class_values[0].lower():
-            recommendations.append({"trace": trace["case_id"], "recommendation": None})
+        # Skip prefixes already predicted as positive
+        if predicted_label == pos_label:
+            recommendations.append({
+                "trace": trace["case_id"],
+                "recommendation": None
+            })
             continue
 
-        # Filter paths compliant with the current trace prefix
+        # Compare prefix against positive paths
         compatible_paths = []
         for path in positive_paths:
             is_compatible = True
             for activity, presence in path["conditions"]:
-                if encoding[activity_index[activity]] == 1 and presence == 0:
+                prefix_val = encoding[activity_index[activity]]
+
+                # Contradiction: path requires "not executed" but prefix already executed it
+                if prefix_val == 1 and presence == 0:
                     is_compatible = False
                     break
+
             if is_compatible:
                 compatible_paths.append(path)
 
+        # No compliant positive path
         if not compatible_paths:
-            recommendations.append({"trace": trace["case_id"], "recommendation": set()})
+            recommendations.append({
+                "trace": trace["case_id"],
+                "recommendation": set()
+            })
             continue
 
-        # Selection: randomly choose among paths with highest confidence (TO UPDATE)
-        max_confidence = max(p["confidence"] for p in compatible_paths)
-        best_paths = [p for p in compatible_paths if p["confidence"] == max_confidence]
+        # Select path with highest confidence (random tie-break)
+        max_conf = max(p["confidence"] for p in compatible_paths)
+        best_paths = [p for p in compatible_paths if p["confidence"] == max_conf]
         best_path = random.choice(best_paths)
 
+        # Extract recommendations from best path
         rec = set()
         for activity, presence in best_path["conditions"]:
             if encoding[activity_index[activity]] != presence:
                 verdict = "execute" if presence == 1 else "skip"
                 rec.add((activity, verdict))
 
-        recommendations.append({"trace": trace["case_id"], "recommendation": rec})
+        recommendations.append({
+            "trace": trace["case_id"],
+            "recommendation": rec
+        })
 
     return recommendations
 

@@ -42,7 +42,7 @@ def load_raw_traces(xes_path):
 
     for trace in log:
         case_id = trace.attributes.get("concept:name")
-        label = trace.attributes.get("label")
+        label = str(trace.attributes.get("label")).lower()
 
         activities = []
         for event in trace:
@@ -64,12 +64,12 @@ def load_raw_traces(xes_path):
 # saves the processed data to CSV files and returns the processed traces
 def prepare_data(raw_training_data, raw_test_data, prefix_length):
     # Load and process training data
-    traces, activities = load_raw_traces(raw_training_data)
-    training_traces = encode_traces(traces, activities, prefix_length)  
+    raw_train_traces, activities = load_raw_traces(raw_training_data)
+    train_traces = encode_traces(raw_train_traces, activities, prefix_length)  
 
     # Load and process testing data
-    traces, _ = load_raw_traces(raw_test_data)
-    testing_traces = encode_traces(traces, activities, prefix_length)
+    raw_test_traces, _ = load_raw_traces(raw_test_data)
+    test_traces = encode_traces(raw_test_traces, activities, prefix_length)
 
     # Save processed data to CSV files
     data_path = "data/processed"
@@ -77,11 +77,11 @@ def prepare_data(raw_training_data, raw_test_data, prefix_length):
     os.makedirs(data_path, exist_ok=True)
     os.makedirs(prefix_data_path, exist_ok=True)
 
-    save_traces(training_traces, activities, os.path.join(prefix_data_path, "training_data.csv"))
-    save_traces(testing_traces, activities, os.path.join(prefix_data_path, "testing_data.csv"))
+    save_traces(train_traces, activities, os.path.join(prefix_data_path, "training_data.csv"))
+    save_traces(test_traces, activities, os.path.join(prefix_data_path, "testing_data.csv"))
 
     # Save full testing data without prefix limitation
-    full_traces = encode_traces(traces, activities, prefix_length=None)
-    save_traces(full_traces, activities, os.path.join(data_path, "full_testing_data.csv"))
+    full_test_traces = encode_traces(raw_test_traces, activities, prefix_length=None)
+    save_traces(full_test_traces, activities, os.path.join(data_path, "full_testing_data.csv"))
 
-    return training_traces, testing_traces, full_traces, activities
+    return train_traces, test_traces, full_test_traces, activities
