@@ -27,6 +27,8 @@ def encode_traces(traces, activities, prefix_length = None):
                 break
             if activity in activity_index:
                 encoding[activity_index[activity]] = 1
+            else:
+                encoding[activity_index["unknown"]] = 1
 
         trace["encoding"] = encoding
 
@@ -61,13 +63,18 @@ def load_raw_traces(xes_path):
             })
 
     print(f"Loaded {len(traces)} traces from {xes_path}")
-    print(f"Identified {len(activity_set)} unique activities")
+    print(f"Identified {len(activity_set)} unique activities (including \"unknown\")\n")
 
-    return traces, sorted(activity_set)
+    sorted_activities = sorted(activity_set)
+    sorted_activities.append("unknown")  # Add "unknown" activity for unseen activities during encoding
+
+    return traces, sorted_activities
 
 # Prepares training and testing data from raw XES files;
 # saves the processed data to CSV files and returns the processed traces
 def prepare_data(raw_training_data, raw_test_data, prefix_length):
+    print(f"\n--- Data Preparation ---\n")
+
     # Load and process training data
     print(f"Preparing training data")
     raw_train_traces, activities = load_raw_traces(raw_training_data)
