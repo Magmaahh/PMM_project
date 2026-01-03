@@ -12,7 +12,7 @@ if __name__ == "__main__":
         print(f"\n\n=== Processing with Prefix Length: {PREFIX_LENGTH} ===\n")
 
         # Prepare train and test data
-        prefix_training_log, prefix_testing_log, test_set, activities = prepare_data(TRAIN_DATA_PATH, TEST_DATA_PATH, PREFIX_LENGTH)
+        prefix_training_log, prefix_testing_log, test_set, activities = prepare_data(TRAIN_DATA_PATH, TEST_DATA_PATH, PROCESSED_DATA_PATH, PREFIX_LENGTH)
 
         X_train = [trace["encoding"] for trace in prefix_training_log]
         y_train = [trace["label"] for trace in prefix_training_log]

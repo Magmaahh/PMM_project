@@ -1,6 +1,9 @@
 # File paths for raw train/test datasets
 TRAIN_DATA_PATH = "data/raw/Production_avg_dur_training_0-80.xes"
 TEST_DATA_PATH = "data/raw/Production_avg_dur_testing_80-100.xes"
+
+# Paths for processed data and output plots
+PROCESSED_DATA_PATH = "data/processed"
 TREES_PLOTS_PATH = "fig"
 
 # Prefix length used for data processing

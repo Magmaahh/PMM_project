@@ -72,7 +72,7 @@ def load_raw_traces(xes_path):
 
 # Prepares training and testing data from raw XES files;
 # saves the processed data to CSV files and returns the processed traces
-def prepare_data(raw_training_data, raw_test_data, prefix_length):
+def prepare_data(raw_training_data, raw_test_data, processed_data, prefix_length):
     print(f"\n--- Data Preparation ---\n")
 
     # Load and process training data
@@ -86,9 +86,8 @@ def prepare_data(raw_training_data, raw_test_data, prefix_length):
     test_traces = encode_traces(raw_test_traces, activities, prefix_length)
 
     # Save processed data to CSV files
-    data_path = "data/processed"
-    prefix_data_path = os.path.join(data_path, f"{prefix_length}_prefix")
-    os.makedirs(data_path, exist_ok=True)
+    os.makedirs(processed_data, exist_ok=True)
+    prefix_data_path = os.path.join(processed_data, f"{prefix_length}_prefix")
     os.makedirs(prefix_data_path, exist_ok=True)
 
     save_traces(train_traces, activities, os.path.join(prefix_data_path, "training_data.csv"))
@@ -97,6 +96,6 @@ def prepare_data(raw_training_data, raw_test_data, prefix_length):
     # Save full testing data without prefix limitation
     print(f"\nPreparing full testing data without prefix limitation")
     full_test_traces = encode_traces(raw_test_traces, activities, prefix_length=None)
-    save_traces(full_test_traces, activities, os.path.join(data_path, "full_testing_data.csv"))
+    save_traces(full_test_traces, activities, os.path.join(processed_data, "full_testing_data.csv"))
 
     return train_traces, test_traces, full_test_traces, activities
