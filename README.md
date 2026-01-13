@@ -1,4 +1,4 @@
-# PMM_project
+# PMM Course Project
 Project for the Process Mining and Management course (a.y. 2025–2026) offered by the University of Trento.
 
 This repository contains the implementation of **Project Typology #2: “Extracting and evaluating recommendations”**.
