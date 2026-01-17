@@ -1,9 +1,11 @@
-# PMM Course Project
+# PMM_project
 Project for the Process Mining and Management course (a.y. 2025–2026) offered by the University of Trento.
 
 This repository contains the implementation of **Project Typology #2: “Extracting and evaluating recommendations”**.
 
 The goal of the project is to use predictive process monitoring techniques to both predict process outcomes and derive recommendations that can guide ongoing process executions towards a desirable outcome.
+
+For more details about implementation, obtained results and following discussions, please refer to the provided report ([project_report.pdf](project_report.pdf)). 
 
 ## Table of contents
 - [Requirements](#requirements)
